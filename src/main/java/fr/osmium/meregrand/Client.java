@@ -31,6 +31,7 @@ public class Client {
 
     public Client() {
         try {
+            ServerSocket socketServer = new ServerSocket(6969);
             final Socket socket = new Socket(HOSTNAME, PORT);
             LOGGER.info("Client connected !");
 
@@ -50,18 +51,27 @@ public class Client {
 
             final AuthPacket authPacket = new AuthPacket(email, password, message, targetMail);
             out.writeObject(authPacket);
+            Socket s1 = socketServer.accept();
+            if(s1 != null){
+                ObjectInputStream objectInputStream = new ObjectInputStream(s1.getInputStream());
+                Packet packet = (Packet) objectInputStream.readObject();
+                if(packet.getType() == Packet.PacketType.PEAR_TO_PEAR_PACKET){
 
-            final Object object = in.readObject();
-            if (object instanceof FailAuthPacket failAuthPacket) {
-                LOGGER.warning(failAuthPacket.getErrorMessage());
-            } else if (object instanceof SendTokenPacket sendTokenPacket) {
-                final Socket targetSocket = new Socket(sendTokenPacket.getIp(), 6969);
-                ObjectOutputStream targetOut = new ObjectOutputStream(targetSocket.getOutputStream());
-                ObjectInputStream targetIn = new ObjectInputStream(targetSocket.getInputStream());
-                PearToPearPacket pearToPearPacket = new PearToPearPacket(cipher.cipher(message, sendTokenPacket.getPublicKey()), sendTokenPacket.getToken());
-                targetOut.writeObject(pearToPearPacket);
-                targetSocket.close();
+                }
             }
+            switch (in.readObject()) {
+                case FailAuthPacket failAuthPacket -> LOGGER.warning(failAuthPacket.getErrorMessage());
+                case SendTokenPacket sendTokenPacket -> {
+                    final Socket targetSocket = new Socket(sendTokenPacket.getIp(), 6969);
+                    ObjectOutputStream targetOut = new ObjectOutputStream(targetSocket.getOutputStream());
+                    ObjectInputStream targetIn = new ObjectInputStream(targetSocket.getInputStream());
+                    PearToPearPacket pearToPearPacket = new PearToPearPacket(cipher.cipher(message, sendTokenPacket.getPublicKey()), sendTokenPacket.getToken());
+                    targetOut.writeObject(pearToPearPacket);
+                    targetSocket.close();
+                }
+                case null, default -> LOGGER.warning("Unknown packet");
+            }
+
             socket.close();
 
         } catch (IOException | ClassNotFoundException e) {
@@ -69,7 +79,9 @@ public class Client {
         }
     }
 
-    private void getServerKey() throws IOException, ClassNotFoundException {
+
+
+    private void getServerKey () throws IOException, ClassNotFoundException {
         out.writeObject(new RequestServerKeyPacket());
         ExchangeKeyPacket exchangeKeyPacket = (ExchangeKeyPacket) in.readObject();
         serverPublicKey = exchangeKeyPacket.getPublicKey();
