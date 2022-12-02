@@ -1,21 +1,29 @@
 package fr.osmium.meregrand.packet;
 
+import java.security.interfaces.RSAPublicKey;
+
 public class SendTokenPacket extends Packet {
 
-    private final String publicKey;
+    private final RSAPublicKey publicKey;
     private final String token;
+    private final String ip;
 
-    public SendTokenPacket(String token, String publicKey) {
+    public SendTokenPacket(RSAPublicKey publicKey, String token, String ip) {
         super(PacketType.SEND_TOKEN_PACKET);
-        this.token = token;
         this.publicKey = publicKey;
+        this.token = token;
+        this.ip = ip;
     }
 
-    public String getPublicKey() {
+    public RSAPublicKey getPublicKey() {
         return publicKey;
     }
 
     public String getToken() {
         return token;
+    }
+
+    public String getIp() {
+        return ip;
     }
 }

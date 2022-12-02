@@ -13,10 +13,10 @@ public class ByteUtils {
         out.close();
         return bytes;
     }
-    public static <T> T deserialize(byte[] data, Class<T> clazz) throws IOException, ClassNotFoundException {
+    public static Object deserialize(byte[] data) throws IOException, ClassNotFoundException {
         final ByteArrayInputStream in = new ByteArrayInputStream(data);
         final ObjectInputStream is = new ObjectInputStream(in);
-        T object = clazz.cast(is.readObject());
+        Object object = is.readObject();
         in.close();
         is.close();
         return object;

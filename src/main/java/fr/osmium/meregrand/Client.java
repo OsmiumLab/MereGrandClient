@@ -3,15 +3,12 @@ package fr.osmium.meregrand;
 import fr.osmium.meregrand.cipher.ICipher;
 import fr.osmium.meregrand.cipher.RSA;
 import fr.osmium.meregrand.cipher.SHA256;
-import fr.osmium.meregrand.packet.AuthPacket;
-import fr.osmium.meregrand.packet.ExchangeKeyPacket;
-import fr.osmium.meregrand.packet.RequestServerKeyPacket;
-import fr.osmium.meregrand.packet.SendTokenPacket;
-import fr.osmium.meregrand.utils.ByteUtils;
+import fr.osmium.meregrand.packet.*;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Scanner;
@@ -21,9 +18,9 @@ public class Client {
 
     private final static Logger LOGGER = Logger.getLogger("MereGrandClient");
 
-    private final static String HOSTNAME = "localhost";
-
     private final static int PORT = 6969;
+
+    private final static String HOSTNAME = "localhost";
 
     private final ICipher cipher = new RSA(2048);
 
@@ -52,11 +49,20 @@ public class Client {
             password = cipher.cipher(password, serverPublicKey);
 
             final AuthPacket authPacket = new AuthPacket(email, password, message, targetMail);
-            out.writeObject(cipher.cipher(ByteUtils.serialize(authPacket), serverPublicKey));
+            out.writeObject(authPacket);
 
-            SendTokenPacket sendTokenPacket = (SendTokenPacket) in.readObject();
-            // send packet to c2
-
+            switch (in.readObject()) {
+                case FailAuthPacket failAuthPacket -> LOGGER.warning(failAuthPacket.getErrorMessage());
+                case SendTokenPacket sendTokenPacket -> {
+                    final Socket targetSocket = new Socket(sendTokenPacket.getIp(), 6969);
+                    ObjectOutputStream targetOut = new ObjectOutputStream(targetSocket.getOutputStream());
+                    ObjectInputStream targetIn = new ObjectInputStream(targetSocket.getInputStream());
+                    PearToPearPacket pearToPearPacket = new PearToPearPacket(cipher.cipher(message, sendTokenPacket.getPublicKey()), sendTokenPacket.getToken());
+                    targetOut.writeObject(pearToPearPacket);
+                    targetSocket.close();
+                }
+                case null, default -> LOGGER.warning("Unknown packet");
+            }
 
             socket.close();
 
@@ -65,7 +71,7 @@ public class Client {
         }
     }
 
-    private void getServerKey() throws IOException, ClassNotFoundException {
+    private void getServerKey () throws IOException, ClassNotFoundException {
         out.writeObject(new RequestServerKeyPacket());
         ExchangeKeyPacket exchangeKeyPacket = (ExchangeKeyPacket) in.readObject();
         serverPublicKey = exchangeKeyPacket.getPublicKey();
