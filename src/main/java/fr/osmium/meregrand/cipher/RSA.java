@@ -2,7 +2,8 @@ package fr.osmium.meregrand.cipher;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 
 public class RSA implements ICipher {
 
@@ -15,18 +16,15 @@ public class RSA implements ICipher {
     }
 
     public synchronized void generateKeys(int bits) {
-        final SecureRandom r = new SecureRandom();
-        final BigInteger p = new BigInteger(bits / 2, 100, r);
-        final BigInteger q = new BigInteger(bits / 2, 100, r);
-        modulus = p.multiply(q);
-
-        final BigInteger m = (p.subtract(BigInteger.ONE)).multiply(q.subtract(BigInteger.ONE));
-
-        publicKey = BigInteger.valueOf(3L);
-
-        while (m.gcd(publicKey).intValue() > 1)
-            publicKey = publicKey.add(BigInteger.valueOf(2L));
-        privateKey = publicKey.modInverse(m);
+        try {
+            final KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+            kpg.initialize(bits);
+            final KeyPair kp = kpg.generateKeyPair();
+            privateKey = new BigInteger(kp.getPrivate().getEncoded());
+            publicKey = new BigInteger(kp.getPublic().getEncoded());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

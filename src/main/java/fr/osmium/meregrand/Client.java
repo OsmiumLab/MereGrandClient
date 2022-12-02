@@ -34,9 +34,7 @@ public class Client {
             in = new ObjectInputStream(socket.getInputStream());
 
             swapPublicKeys();
-            out.writeObject("Server public key: " + serverPublicKey);
-            String s = (String) in.readObject();
-            LOGGER.info(s);
+
 
             socket.close();
         } catch (IOException | ClassNotFoundException e) {
