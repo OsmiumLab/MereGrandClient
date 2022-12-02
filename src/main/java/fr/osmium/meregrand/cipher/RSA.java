@@ -28,8 +28,8 @@ public class RSA implements ICipher {
     }
 
     @Override
-    public String cipher(String message) {
-        return (new BigInteger(message.getBytes(StandardCharsets.UTF_8))).modPow(publicKey, modulus).toString();
+    public String cipher(String message, String publicKey) {
+        return (new BigInteger(message.getBytes(StandardCharsets.UTF_8))).modPow(new BigInteger(publicKey), modulus).toString();
     }
 
     @Override

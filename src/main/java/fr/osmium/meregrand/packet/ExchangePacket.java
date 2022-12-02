@@ -7,8 +7,7 @@ public class ExchangePacket extends Packet {
     public ExchangePacket(String publicKey) {
         super(PacketType.EXCHANGE_PACKET);
         this.publicKey = publicKey;
-
-    };
+    }
 
     public String getPublicKey() {
         return publicKey;
