@@ -51,19 +51,17 @@ public class Client {
             final AuthPacket authPacket = new AuthPacket(email, password, message, targetMail);
             out.writeObject(authPacket);
 
-            switch (in.readObject()) {
-                case FailAuthPacket failAuthPacket -> LOGGER.warning(failAuthPacket.getErrorMessage());
-                case SendTokenPacket sendTokenPacket -> {
-                    final Socket targetSocket = new Socket(sendTokenPacket.getIp(), 6969);
-                    ObjectOutputStream targetOut = new ObjectOutputStream(targetSocket.getOutputStream());
-                    ObjectInputStream targetIn = new ObjectInputStream(targetSocket.getInputStream());
-                    PearToPearPacket pearToPearPacket = new PearToPearPacket(cipher.cipher(message, sendTokenPacket.getPublicKey()), sendTokenPacket.getToken());
-                    targetOut.writeObject(pearToPearPacket);
-                    targetSocket.close();
-                }
-                case null, default -> LOGGER.warning("Unknown packet");
+            final Object object = in.readObject();
+            if (object instanceof FailAuthPacket failAuthPacket) {
+                LOGGER.warning(failAuthPacket.getErrorMessage());
+            } else if (object instanceof SendTokenPacket sendTokenPacket) {
+                final Socket targetSocket = new Socket(sendTokenPacket.getIp(), 6969);
+                ObjectOutputStream targetOut = new ObjectOutputStream(targetSocket.getOutputStream());
+                ObjectInputStream targetIn = new ObjectInputStream(targetSocket.getInputStream());
+                PearToPearPacket pearToPearPacket = new PearToPearPacket(cipher.cipher(message, sendTokenPacket.getPublicKey()), sendTokenPacket.getToken());
+                targetOut.writeObject(pearToPearPacket);
+                targetSocket.close();
             }
-
             socket.close();
 
         } catch (IOException | ClassNotFoundException e) {
@@ -71,7 +69,7 @@ public class Client {
         }
     }
 
-    private void getServerKey () throws IOException, ClassNotFoundException {
+    private void getServerKey() throws IOException, ClassNotFoundException {
         out.writeObject(new RequestServerKeyPacket());
         ExchangeKeyPacket exchangeKeyPacket = (ExchangeKeyPacket) in.readObject();
         serverPublicKey = exchangeKeyPacket.getPublicKey();
