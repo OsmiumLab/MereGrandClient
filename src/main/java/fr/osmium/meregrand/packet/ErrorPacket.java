@@ -1,11 +1,11 @@
 package fr.osmium.meregrand.packet;
 
-public class FailAuthPacket extends Packet {
+public class ErrorPacket extends Packet {
 
     private final String errorMessage;
 
-    public FailAuthPacket(String errorMessage) {
-        super(PacketType.FAIL_AUTH_PACKET);
+    public ErrorPacket(String errorMessage) {
+        super(PacketType.ERROR_PACKET);
         this.errorMessage = errorMessage;
     }
 
