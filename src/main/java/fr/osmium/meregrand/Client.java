@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.Scanner;
 import java.util.logging.Logger;
 
 public class Client {
@@ -34,8 +35,14 @@ public class Client {
             in = new ObjectInputStream(socket.getInputStream());
 
             swapPublicKeys();
-
-
+//            Scanner scanner = new Scanner(System.in);
+//            while (true) {
+//                String message = scanner.nextLine();
+//                out.writeObject(cipher.cipher(message, serverPublicKey));
+//                String response = (String) in.readObject();
+//                LOGGER.info("Server response: " + cipher.decipher(response));
+//                // Le client C1 est désormais libre d'envoyer a qu'il le souhaite son message, par exemple à C2;
+//            }
             socket.close();
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
