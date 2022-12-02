@@ -4,12 +4,13 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 
 public class RSA implements ICipher {
 
-    private BigInteger modulus;
-    private BigInteger privateKey;
-    private BigInteger publicKey;
+    private RSAPrivateKey privateKey;
+    private RSAPublicKey publicKey;
 
     public RSA(int bits) {
         generateKeys(bits);
@@ -20,30 +21,35 @@ public class RSA implements ICipher {
             final KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
             kpg.initialize(bits);
             final KeyPair kp = kpg.generateKeyPair();
-            privateKey = new BigInteger(kp.getPrivate().getEncoded());
-            publicKey = new BigInteger(kp.getPublic().getEncoded());
+            privateKey = (RSAPrivateKey) kp.getPrivate();
+            publicKey = (RSAPublicKey) kp.getPublic();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public String cipher(String message, String publicKey) {
-        return (new BigInteger(message.getBytes(StandardCharsets.UTF_8))).modPow(new BigInteger(publicKey), modulus).toString();
+    public String cipher(String message, RSAPublicKey publicKey) {
+        return cipher(message.getBytes(StandardCharsets.UTF_8), publicKey);
     }
 
     @Override
-    public String decipher(String message) {
-        return new String((new BigInteger(message)).modPow(privateKey, modulus).toByteArray());
+    public String cipher(byte[] bytes, RSAPublicKey publicKey) {
+        return (new BigInteger(bytes).modPow(new BigInteger(publicKey.getEncoded()), publicKey.getModulus()).toString());
     }
 
     @Override
-    public String getPublicKey() {
-        return publicKey.toString();
+    public byte[] decipher(String message) {
+        return new BigInteger(message.getBytes(StandardCharsets.UTF_8)).modPow(privateKey.getPrivateExponent(), privateKey.getModulus()).toByteArray();
     }
 
     @Override
-    public String getPrivateKey() {
-        return privateKey.toString();
+    public RSAPublicKey getPublicKey() {
+        return publicKey;
+    }
+
+    @Override
+    public RSAPrivateKey getPrivateKey() {
+        return privateKey;
     }
 }
